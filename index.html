@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADAMA Development PLC - NazMed Medical Sales Batch Manufacturing Record</title>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1, h2 { text-align: center; }
+        .section { margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: inline-block; width: 200px; text-align: right; margin-right: 10px; }
+        .form-group input, .form-group textarea { width: 300px; padding: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .signature-pad { border: 1px solid #ccc; width: 250px; height: 100px; }
+        button { margin: 5px; padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .action-buttons { text-align: center; margin-top: 20px; }
+        .delete-btn { background-color: #dc3545; }
+        .delete-btn:hover { background-color: #c82333; }
+        .success-message { color: green; margin-left: 210px; display: none; }
+    </style>
+</head>
+<body>
+    <h1>ADAMA Development PLC</h1>
+    <h2>NazMed Medical Sales Batch Manufacturing Record</h2>
+    <p>Document no: ADAMA-MS-001</p>
+
+    <div class="section">
+        <h3>1. Products</h3>
+        <div class="form-group"><label>Product Name:</label><input type="text" id="productName"><span class="success-message" id="productDetailsSuccess">Saved!</span></div>
+        <div class="form-group"><label>Colour:</label><input type="text" id="colour"></div>
+        <div class="form-group"><label>Shape:</label><input type="text" id="shape"></div>
+        <div class="form-group"><label>Batch Size:</label><input type="text" id="batchSize"></div>
+        <div class="form-group"><label>Approx Quantity:</label><input type="text" id="approxQuantity"></div>
+        <div class="form-group"><label>Primary/Secondary Packages:</label><input type="text" id="packages"></div>
+        <div class="form-group"><label>Storage Conditions:</label><input type="text" id="storage"></div>
+        <button onclick="saveProductDetails()">Save Products</button>
+    </div>
+
+    <div class="section">
+        <h3>2. Reference Documents</h3>
+        <table id="refDocsTable">
+            <thead><tr><th>Document Description</th><th></th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <div class="form-group"><label>Prepared By:</label><input type="text" id="refPreparedBy"><span class="success-message" id="refDocsSuccess">Saved!</span></div>
+        <div class="form-group"><label>Signature:</label><canvas id="refSignature" class="signature-pad"></canvas><button onclick="clearSignature('refSignature')">Clear</button></div>
+        <div class="form-group"><label>Date:</label><input type="date" id="refDate"></div>
+        <button onclick="addRefDocument()">Add Document</button>
+        <button onclick="saveRefDocuments()">Save Reference Documents</button>
+    </div>
+
+    <div class="section">
+        <h3>3. Raw Materials</h3>
+        <table id="rawMaterialsTable">
+            <thead><tr><th>Name</th><th>Code</th><th>Weight</th><th>Batch</th><th>Qty</th><th>Performed By</th><th>Checked By</th><th>Received By</th><th></th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <button onclick="addRawMaterial()">Add Raw Material</button>
+        <button onclick="saveRawMaterials()">Save Raw Materials</button>
+        <span class="success-message" id="rawMaterialsSuccess">Saved!</span>
+    </div>
+
+    <div class="section">
+        <h3>4. Processed Materials</h3>
+        <table id="equipmentTable">
+            <thead><tr><th>Description</th><th>Batch No.</th><th>Previous Calibration</th><th>Calibration Required</th><th>Performed By/Date</th><th>Verified By/Date</th><th></th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <button onclick="addEquipment()">Add Equipment</button>
+        <button onclick="saveEquipment()">Save Processed Materials</button>
+        <span class="success-message" id="equipmentSuccess">Saved!</span>
+    </div>
+
+    <div class="section">
+        <h3>5. Area Clearance</h3>
+        <table id="areaClearanceTable">
+            <thead><tr><th>S/No</th><th>Step</th><th>Performed By</th><th>Verified By/Date</th><th></th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <div class="form-group"><label>Prepared By (QA):</label><input type="text" id="areaPreparedBy"><span class="success-message" id="areaClearanceSuccess">Saved!</span></div>
+        <div class="form-group"><label>Signature:</label><canvas id="areaSignature" class="signature-pad"></canvas><button onclick="clearSignature('areaSignature')">Clear</button></div>
+        <div class="form-group"><label>Date:</label><input type="date" id="areaDate"></div>
+        <div class="form-group"><label>Verified By:</label><input type="text" id="areaVerifiedBy"></div>
+        <div class="form-group"><label>Signature:</label><canvas id="areaVerifiedSignature" class="signature-pad"></canvas><button onclick="clearSignature('areaVerifiedSignature')">Clear</button></div>
+        <div class="form-group"><label>Date:</label><input type="date" id="areaVerifiedDate"></div>
+        <button onclick="addAreaStep()">Add Step</button>
+        <button onclick="saveAreaClearance()">Save Area Clearance</button>
+    </div>
+
+    <div class="section">
+        <h3>6. Production Procedure</h3>
+        <div class="subsection">
+            <h4>A. Raw Material Preparation</h4>
+            <table id="rawMaterialPrepTable">
+                <thead><tr><th>Step</th><th>Performed By/Date</th><th>Verified By/Date</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <button onclick="addStep('rawMaterialPrepTable')">Add Step</button>
+        </div>
+        <div class="subsection">
+            <h4>B. Rewining Procedure</h4>
+            <table id="rewiningTable">
+                <thead><tr><th>Step</th><th>Performed By/Date</th><th>Verified By/Date</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <button onclick="addStep('rewiningTable')">Add Step</button>
+        </div>
+        <div class="subsection">
+            <h4>C. Bleaching Procedure</h4>
+            <table id="bleachingTable">
+                <thead><tr><th>Step</th><th>Performed By/Date</th><th>Verified By/Date</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <button onclick="addStep('bleachingTable')">Add Step</button>
+        </div>
+        <div class="subsection">
+            <h4>D. Drying</h4>
+            <table id="dryingTable">
+                <thead><tr><th>Step</th><th>Performed By/Date</th><th>Verified By/Date</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <button onclick="addStep('dryingTable')">Add Step</button>
+        </div>
+        <div class="subsection">
+            <h4>E. Folding</h4>
+            <table id="foldingTable">
+                <thead><tr><th>Step</th><th>Performed By/Date</th><th>Verified By/Date</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <button onclick="addStep('foldingTable')">Add Step</button>
+        </div>
+        <button onclick="saveProcedure()">Save Procedure</button>
+        <span class="success-message" id="procedureSuccess">Saved!</span>
+    </div>
+
+    <div class="section">
+        <h3>7. Sampling, Material Transfer, and Storage</h3>
+        <table id="samplingTable">
+            <thead><tr><th>Description</th><th>Performed By/Date</th><th>Verified By/Date</th></tr></thead>
+            <tbody>
+                <tr><td>Raw material (fabric): verified COA as attached</td><td><input type="text" class="sampling-performed"></td><td><input type="text" class="sampling-verified"></td></tr>
+                <tr><td>Raw material (chemicals): verified at arrival as attached</td><td><input type="text" class="sampling-performed"></td><td><input type="text" class="sampling-verified"></td></tr>
+                <tr><td>Finished fabric: checked as attached</td><td><input type="text" class="sampling-performed"></td><td><input type="text" class="sampling-verified"></td></tr>
+                <tr><td>Packing condition: checked using stratified random sample as attached</td><td><input type="text" class="sampling-performed"></td><td><input type="text" class="sampling-verified"></td></tr>
+                <tr><td>Finished good: transferred to warehouse after quality assurance approval</td><td><input type="text" class="sampling-performed"></td><td><input type="text" class="sampling-verified"></td></tr>
+                <tr><td>Storage: clean, dry, and pest-free</td><td><input type="text" class="sampling-performed"></td><td><input type="text" class="sampling-verified"></td></tr>
+            </tbody>
+        </table>
+        <button onclick="saveSampling()">Save Sampling</button>
+        <span class="success-message" id="samplingSuccess">Saved!</span>
+    </div>
+
+    <div class="section">
+        <h3>8. Production Batch Record Issuance</h3>
+        <div class="form-group"><label>Issued By:</label><input type="text" id="issuedBy"><span class="success-message" id="batchIssuanceSuccess">Saved!</span></div>
+        <div class="form-group"><label>Signature:</label><canvas id="issuedSignature" class="signature-pad"></canvas><button onclick="clearSignature('issuedSignature')">Clear</button></div>
+        <div class="form-group"><label>Date:</label><input type="date" id="issuedDate"></div>
+        <div class="form-group"><label>Issued To:</label><input type="text" id="issuedTo"></div>
+        <div class="form-group"><label>Signature:</label><canvas id="issuedToSignature" class="signature-pad"></canvas><button onclick="clearSignature('issuedToSignature')">Clear</button></div>
+        <div class="form-group"><label>Date:</label><input type="date" id="issuedToDate"></div>
+        <button onclick="saveBatchIssuance()">Save Batch Issuance</button>
+    </div>
+
+    <div class="section">
+        <h3>9. Post Production Review</h3>
+        <table id="postProductionTable">
+            <thead><tr><th>Department</th><th>Name</th><th>Signature</th><th>Date</th></tr></thead>
+            <tbody>
+                <tr><td>Gauze Bleaching & Finishing Production Department</td><td><input type="text" class="post-prod-name"></td><td><canvas class="signature-pad" id="sig1"></canvas></td><td><input type="date" class="post-prod-date"></td></tr>
+                <tr><td>RQAS</td><td><input type="text" class="post-prod-name"></td><td><canvas class="signature-pad" id="sig2"></canvas></td><td><input type="date" class="post-prod-date"></td></tr>
+            </tbody>
+        </table>
+        <button onclick="clearSignature('sig1')">Clear Signature 1</button>
+        <button onclick="clearSignature('sig2')">Clear Signature 2</button>
+        <button onclick="savePostProduction()">Save Post Production</button>
+        <span class="success-message" id="postProductionSuccess">Saved!</span>
+    </div>
+
+    <div class="section">
+        <h3>10. Product Release</h3>
+        <div class="form-group"><label>Batch No:</label><input type="text" id="lotNo"><span class="success-message" id="productReleaseSuccess">Saved!</span></div>
+        <div class="form-group"><label>MFG Date:</label><input type="date" id="mfgDate"></div>
+        <div class="form-group"><label>EXP Date:</label><input type="date" id="expDate"></div>
+        <table id="productReleaseTable">
+            <thead><tr><th>Role</th><th>Name</th><th>Signature</th><th>Date</th></tr></thead>
+            <tbody>
+                <tr><td>Gauze Bleaching And Finishing Production Department Manager</td><td><input type="text" class="prod-release-name"></td><td><canvas class="signature-pad" id="sig3"></canvas></td><td><input type="date" class="prod-release-date"></td></tr>
+                <tr><td>Bleaching & Finishing Quality Assurance Division Head</td><td><input type="text" class="prod-release-name"></td><td><canvas class="signature-pad" id="sig4"></canvas></td><td><input type="date" class="prod-release-date"></td></tr>
+                <tr><td>RQAS Manager</td><td><input type="text" class="prod-release-name"></td><td><canvas class="signature-pad" id="sig5"></canvas></td><td><input type="date" class="prod-release-date"></td></tr>
+            </tbody>
+        </table>
+        <button onclick="clearSignature('sig3')">Clear Signature 1</button>
+        <button onclick="clearSignature('sig4')">Clear Signature 2</button>
+        <button onclick="clearSignature('sig5')">Clear Signature 3</button>
+        <button onclick="saveProductRelease()">Save Product Release</button>
+    </div>
+
+    <div class="action-buttons">
+        <button onclick="submitReport()">Submit Report</button>
+        <button onclick="exportToPDF()">Export to PDF</button>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // Initialize signature pads
+            const signaturePads = {};
+            document.querySelectorAll('.signature-pad').forEach(canvas => {
+                const pad = new SignaturePad(canvas, { penColor: 'black' });
+                signaturePads[canvas.id] = pad;
+            });
+
+            // Utility to show success message
+            function showSuccess(messageId) {
+                const success = document.getElementById(messageId);
+                success.style.display = 'inline';
+                setTimeout(() => { success.style.display = 'none'; }, 2000);
+            }
+
+            // Clear signature
+            function clearSignature(canvasId) {
+                signaturePads[canvasId].clear();
+            }
+
+            // Add table rows
+            function addRefDocument() {
+                const table = document.getElementById('refDocsTable').getElementsByTagName('tbody')[0];
+                const row = table.insertRow();
+                row.innerHTML = `<td><input type="text" class="ref-doc-desc"></td><td><button class="delete-btn" onclick="this.parentElement.parentElement.remove()">Delete</button></td>`;
+            }
+
+            function addRawMaterial() {
+                const table = document.getElementById('rawMaterialsTable').getElementsByTagName('tbody')[0];
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td><input type="text" class="raw-mat-name"></td>
+                    <td><input type="text" class="raw-mat-code"></td>
+                    <td><input type="text" class="raw-mat-weight"></td>
+                    <td><input type="text" class="raw-mat-batch"></td>
+                    <td><input type="text" class="raw-mat-qty"></td>
+                    <td><input type="text" class="raw-mat-performed"></td>
+                    <td><input type="text" class="raw-mat-checked"></td>
+                    <td><input type="text" class="raw-mat-received"></td>
+                    <td><button class="delete-btn" onclick="this.parentElement.parentElement.remove()">Delete</button></td>`;
+            }
+
+            function addEquipment() {
+                const table = document.getElementById('equipmentTable').getElementsByTagName('tbody')[0];
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td><input type="text" class="equip-desc"></td>
+                    <td><input type="text" class="equip-batch"></td>
+                    <td><input type="text" class="equip-prev-cal"></td>
+                    <td><input type="text" class="equip-cal-req"></td>
+                    <td><input type="text" class="equip-performed"></td>
+                    <td><input type="text" class="equip-verified"></td>
+                    <td><button class="delete-btn" onclick="this.parentElement.parentElement.remove()">Delete</button></td>`;
+            }
+
+            function addAreaStep() {
+                const table = document.getElementById('areaClearanceTable').getElementsByTagName('tbody')[0];
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td><input type="text" class="area-sno"></td>
+                    <td><input type="text" class="area-step"></td>
+                    <td><input type="text" class="area-performed"></td>
+                    <td><input type="text" class="area-verified"></td>
+                    <td><button class="delete-btn" onclick="this.parentElement.parentElement.remove()">Delete</button></td>`;
+            }
+
+            function addStep(tableId) {
+                const table = document.getElementById(tableId).getElementsByTagName('tbody')[0];
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td><input type="text" class="${tableId}-step"></td>
+                    <td><input type="text" class="${tableId}-performed"></td>
+                    <td><input type="text" class="${tableId}-verified"></td>
+                    <td><button class="delete-btn" onclick="this.parentElement.parentElement.remove()">Delete</button></td>`;
+            }
+
+            // Save functions
+            function saveProductDetails() {
+                const data = {
+                    productName: document.getElementById('productName').value || '',
+                    colour: document.getElementById('colour').value || '',
+                    shape: document.getElementById('shape').value || '',
+                    batchSize: document.getElementById('batchSize').value || '',
+                    approxQuantity: document.getElementById('approxQuantity').value || '',
+                    packages: document.getElementById('packages').value || '',
+                    storage: document.getElementById('storage').value || ''
+                };
+                localStorage.setItem('productDetails', JSON.stringify(data));
+                console.log('Product Details Saved:', data);
+                showSuccess('productDetailsSuccess');
+            }
+
+            function saveRefDocuments() {
+                const table = document.getElementById('refDocsTable').getElementsByTagName('tbody')[0];
+                const docs = Array.from(table.rows).map(row => row.querySelector('.ref-doc-desc').value || '');
+                const data = {
+                    documents: docs,
+                    preparedBy: document.getElementById('refPreparedBy').value || '',
+                    signature: signaturePads['refSignature'].toDataURL(),
+                    date: document.getElementById('refDate').value || ''
+                };
+                localStorage.setItem('refDocuments', JSON.stringify(data));
+                console.log('Reference Documents Saved:', data);
+                showSuccess('refDocsSuccess');
+            }
+
+            function saveRawMaterials() {
+                const table = document.getElementById('rawMaterialsTable').getElementsByTagName('tbody')[0];
+                const materials = Array.from(table.rows).map(row => ({
+                    name: row.querySelector('.raw-mat-name').value || '',
+                    code: row.querySelector('.raw-mat-code').value || '',
+                    weight: row.querySelector('.raw-mat-weight').value || '',
+                    batch: row.querySelector('.raw-mat-batch').value || '',
+                    qty: row.querySelector('.raw-mat-qty').value || '',
+                    performed: row.querySelector('.raw-mat-performed').value || '',
+                    checked: row.querySelector('.raw-mat-checked').value || '',
+                    received: row.querySelector('.raw-mat-received').value || ''
+                }));
+                localStorage.setItem('rawMaterials', JSON.stringify(materials));
+                console.log('Raw Materials Saved:', materials);
+                showSuccess('rawMaterialsSuccess');
+            }
+
+            function saveEquipment() {
+                const table = document.getElementById('equipmentTable').getElementsByTagName('tbody')[0];
+                const equipment = Array.from(table.rows).map(row => ({
+                    description: row.querySelector('.equip-desc').value || '',
+                    batch: row.querySelector('.equip-batch').value || '',
+                    prevCal: row.querySelector('.equip-prev-cal').value || '',
+                    calReq: row.querySelector('.equip-cal-req').value || '',
+                    performed: row.querySelector('.equip-performed').value || '',
+                    verified: row.querySelector('.equip-verified').value || ''
+                }));
+                localStorage.setItem('equipment', JSON.stringify(equipment));
+                console.log('Processed Materials Saved:', equipment);
+                showSuccess('equipmentSuccess');
+            }
+
+            function saveAreaClearance() {
+                const table = document.getElementById('areaClearanceTable').getElementsByTagName('tbody')[0];
+                const steps = Array.from(table.rows).map(row => ({
+                    sno: row.querySelector('.area-sno').value || '',
+                    step: row.querySelector('.area-step').value || '',
+                    performed: row.querySelector('.area-performed').value || '',
+                    verified: row.querySelector('.area-verified').value || ''
+                }));
+                const data = {
+                    steps,
+                    preparedBy: document.getElementById('areaPreparedBy').value || '',
+                    signature: signaturePads['areaSignature'].toDataURL(),
+                    date: document.getElementById('areaDate').value || '',
+                    verifiedBy: document.getElementById('areaVerifiedBy').value || '',
+                    verifiedSignature: signaturePads['areaVerifiedSignature'].toDataURL(),
+                    verifiedDate: document.getElementById('areaVerifiedDate').value || ''
+                };
+                localStorage.setItem('areaClearance', JSON.stringify(data));
+                console.log('Area Clearance Saved:', data);
+                showSuccess('areaClearanceSuccess');
+            }
+
+            function saveProcedure() {
+                const sections = ['rawMaterialPrepTable', 'rewiningTable', 'bleachingTable', 'dryingTable', 'foldingTable'];
+                const data = {};
+                sections.forEach(section => {
+                    const table = document.getElementById(section).getElementsByTagName('tbody')[0];
+                    data[section] = Array.from(table.rows).map(row => ({
+                        step: row.querySelector(`.${section}-step`).value || '',
+                        performed: row.querySelector(`.${section}-performed`).value || '',
+                        verified: row.querySelector(`.${section}-verified`).value || ''
+                    }));
+                });
+                localStorage.setItem('procedure', JSON.stringify(data));
+                console.log('Procedure Saved:', data);
+                showSuccess('procedureSuccess');
+            }
+
+            function saveSampling() {
+                const table = document.getElementById('samplingTable').getElementsByTagName('tbody')[0];
+                const sampling = Array.from(table.rows).map((row, index) => ({
+                    description: row.cells[0].textContent,
+                    performed: row.querySelector('.sampling-performed').value || '',
+                    verified: row.querySelector('.sampling-verified').value || ''
+                }));
+                localStorage.setItem('sampling', JSON.stringify(sampling));
+                console.log('Sampling Saved:', sampling);
+                showSuccess('samplingSuccess');
+            }
+
+            function saveBatchIssuance() {
+                const data = {
+                    issuedBy: document.getElementById('issuedBy').value || '',
+                    signature: signaturePads['issuedSignature'].toDataURL(),
+                    date: document.getElementById('issuedDate').value || '',
+                    issuedTo: document.getElementById('issuedTo').value || '',
+                    issuedToSignature: signaturePads['issuedToSignature'].toDataURL(),
+                    issuedToDate: document.getElementById('issuedToDate').value || ''
+                };
+                localStorage.setItem('batchIssuance', JSON.stringify(data));
+                console.log('Batch Issuance Saved:', data);
+                showSuccess('batchIssuanceSuccess');
+            }
+
+            function savePostProduction() {
+                const table = document.getElementById('postProductionTable').getElementsByTagName('tbody')[0];
+                const reviews = Array.from(table.rows).map((row, index) => ({
+                    department: row.cells[0].textContent,
+                    name: row.querySelector('.post-prod-name').value || '',
+                    signature: signaturePads[`sig${index + 1}`].toDataURL(),
+                    date: row.querySelector('.post-prod-date').value || ''
+                }));
+                localStorage.setItem('postProduction', JSON.stringify(reviews));
+                console.log('Post Production Saved:', reviews);
+                showSuccess('postProductionSuccess');
+            }
+
+            function saveProductRelease() {
+                const table = document.getElementById('productReleaseTable').getElementsByTagName('tbody')[0];
+                const releases = Array.from(table.rows).map((row, index) => ({
+                    role: row.cells[0].textContent,
+                    name: row.querySelector('.prod-release-name').value || '',
+                    signature: signaturePads[`sig${index + 3}`].toDataURL(),
+                    date: row.querySelector('.prod-release-date').value || ''
+                }));
+                const data = {
+                    lotNo: document.getElementById('lotNo').value || '',
+                    mfgDate: document.getElementById('mfgDate').value || '',
+                    expDate: document.getElementById('expDate').value || '',
+                    releases
+                };
+                localStorage.setItem('productRelease', JSON.stringify(data));
+                console.log('Product Release Saved:', data);
+                showSuccess('productReleaseSuccess');
+            }
+
+            // Submit report
+            function submitReport() {
+                const sections = [
+                    'productDetails', 'refDocuments', 'rawMaterials', 'equipment', 'areaClearance',
+                    'procedure', 'sampling', 'batchIssuance', 'postProduction', 'productRelease'
+                ];
+                let allValid = true;
+                sections.forEach(section => {
+                    if (!localStorage.getItem(section)) {
+                        allValid = false;
+                        alert(`Section ${section.replace(/([A-Z])/g, ' $1').trim()} is not saved. Please save all sections before submitting.`);
+                    }
+                });
+                if (allValid) {
+                    const report = {};
+                    sections.forEach(section => {
+                        report[section] = JSON.parse(localStorage.getItem(section));
+                    });
+                    console.log('Report Submitted:', report);
+                    alert('Report submitted successfully!');
+                }
+            }
+
+            // Export to PDF
+            function exportToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                let yPos = 10;
+
+                // Helper to add section header
+                function addHeader(title) {
+                    doc.setFontSize(14);
+                    doc.text(title, 10, yPos);
+                    yPos += 10;
+                }
+
+                // Helper to add table
+                function addTable(data, headers) {
+                    if (data.length > 0) {
+                        doc.autoTable({
+                            startY: yPos,
+                            head: [headers],
+                            body: data,
+                            theme: 'striped',
+                            styles: { cellPadding: 2, fontSize: 8 }
+                        });
+                        yPos = doc.lastAutoTable.finalY + 10;
+                    }
+                }
+
+                // Helper to add signature
+                function addSignature(label, dataUrl) {
+                    if (dataUrl && dataUrl !== 'data:,') {
+                        doc.setFontSize(10);
+                        doc.text(label, 10, yPos);
+                        doc.addImage(dataUrl, 'PNG', 20, yPos, 25, 10); // 25mm = 2.5cm
+                        yPos += 15;
+                    }
+                }
+
+                // Header
+                doc.setFontSize(16);
+                doc.text('ADAMA Development PLC', 10, yPos);
+                yPos += 7;
+                doc.setFontSize(12);
+                doc.text('NazMed Medical Sales Batch Manufacturing Record', 10, yPos);
+                yPos += 7;
+                doc.text('Document no: ADAMA-MS-001', 10, yPos);
+                yPos += 10;
+
+                // Section 1: Product Details
+                addHeader('1. Product Details');
+                const productDetails = JSON.parse(localStorage.getItem('productDetails')) || {};
+                addTable([
+                    ['Product Name', productDetails.productName || ''],
+                    ['Colour', productDetails.colour || ''],
+                    ['Shape', productDetails.shape || ''],
+                    ['Batch Size', productDetails.batchSize || ''],
+                    ['Approx Quantity', productDetails.approxQuantity || ''],
+                    ['Primary/Secondary Packages', productDetails.packages || ''],
+                    ['Storage Conditions', productDetails.storage || '']
+                ], ['Field', 'Value']);
+
+                // Section 2: Reference Documents
+                addHeader('2. Reference Documents');
+                const refDocs = JSON.parse(localStorage.getItem('refDocuments')) || { documents: [] };
+                addTable(refDocs.documents.map(doc => [doc]), ['Document Description']);
+                doc.text(`Prepared By: ${refDocs.preparedBy || ''}`, 10, yPos);
+                addSignature('Signature:', refDocs.signature);
+                doc.text(`Date: ${refDocs.date || ''}`, 10, yPos);
+                yPos += 10;
+
+                // Section 3: Raw Materials
+                addHeader('3. Raw Materials');
+                const rawMaterials = JSON.parse(localStorage.getItem('rawMaterials')) || [];
+                addTable(rawMaterials.map(m => [m.name, m.code, m.weight, m.batch, m.qty, m.performed, m.checked, m.received]),
+                    ['Name', 'Code', 'Weight', 'Batch', 'Qty', 'Performed By', 'Checked By', 'Received By']);
+
+                // Section 4: Processed Materials
+                addHeader('4. Processed Materials');
+                const equipment = JSON.parse(localStorage.getItem('equipment')) || [];
+                addTable(equipment.map(e => [e.description, e.batch, e.prevCal, e.calReq, e.performed, e.verified]),
+                    ['Description', 'Batch No.', 'Previous Calibration', 'Calibration Required', 'Performed By/Date', 'Verified By/Date']);
+
+                // Section 5: Area Clearance
+                addHeader('5. Area Clearance');
+                const areaClearance = JSON.parse(localStorage.getItem('areaClearance')) || { steps: [] };
+                addTable(areaClearance.steps.map(s => [s.sno, s.step, s.performed, s.verified]),
+                    ['S/No', 'Step', 'Performed By', 'Verified By/Date']);
+                doc.text(`Prepared By: ${areaClearance.preparedBy || ''}`, 10, yPos);
+                addSignature('Signature:', areaClearance.signature);
+                doc.text(`Date: ${areaClearance.date || ''}`, 10, yPos);
+                yPos += 10;
+                doc.text(`Verified By: ${areaClearance.verifiedBy || ''}`, 10, yPos);
+                addSignature('Signature:', areaClearance.verifiedSignature);
+                doc.text(`Date: ${areaClearance.verifiedDate || ''}`, 10, yPos);
+                yPos += 10;
+
+                // Section 6: Production Procedure
+                addHeader('6. Production Procedure');
+                const procedure = JSON.parse(localStorage.getItem('procedure')) || {};
+                const procSections = [
+                    { title: 'A. Raw Material Preparation', id: 'rawMaterialPrepTable' },
+                    { title: 'B. Rewining Procedure', id: 'rewiningTable' },
+                    { title: 'C. Bleaching Procedure', id: 'bleachingTable' },
+                    { title: 'D. Drying', id: 'dryingTable' },
+                    { title: 'E. Folding', id: 'foldingTable' }
+                ];
+                procSections.forEach(section => {
+                    doc.text(section.title, 10, yPos);
+                    yPos += 7;
+                    addTable(procedure[section.id]?.map(row => [row.step, row.performed, row.verified]) || [],
+                        ['Step', 'Performed By/Date', 'Verified By/Date']);
+                });
+
+                // Section 7: Sampling
+                addHeader('7. Sampling, Material Transfer, and Storage');
+                const sampling = JSON.parse(localStorage.getItem('sampling')) || [];
+                addTable(sampling.map(s => [s.description, s.performed, s.verified]),
+                    ['Description', 'Performed By/Date', 'Verified By/Date']);
+
+                // Section 8: Batch Issuance
+                addHeader('8. Production Batch Record Issuance');
+                const batchIssuance = JSON.parse(localStorage.getItem('batchIssuance')) || {};
+                doc.text(`Issued By: ${batchIssuance.issuedBy || ''}`, 10, yPos);
+                addSignature('Signature:', batchIssuance.signature);
+                doc.text(`Date: ${batchIssuance.date || ''}`, 10, yPos);
+                yPos += 10;
+                doc.text(`Issued To: ${batchIssuance.issuedTo || ''}`, 10, yPos);
+                addSignature('Signature:', batchIssuance.issuedToSignature);
+                doc.text(`Date: ${batchIssuance.issuedToDate || ''}`, 10, yPos);
+                yPos += 10;
+
+                // Section 9: Post Production
+                addHeader('9. Post Production Review');
+                const postProduction = JSON.parse(localStorage.getItem('postProduction')) || [];
+                addTable(postProduction.map(p => [p.department, p.name, '', p.date]),
+                    ['Department', 'Name', 'Signature', 'Date']);
+                postProduction.forEach((p, idx) => {
+                    addSignature(`Signature ${idx + 1}:`, p.signature);
+                });
+
+                // Section 10: Product Release
+                addHeader('10. Product Release');
+                const productRelease = JSON.parse(localStorage.getItem('productRelease')) || {};
+                doc.text(`Batch No: ${productRelease.lotNo || ''}`, 10, yPos);
+                yPos += 7;
+                doc.text(`MFG Date: ${productRelease.mfgDate || ''}`, 10, yPos);
+                yPos += 7;
+                doc.text(`EXP Date: ${productRelease.expDate || ''}`, 10, yPos);
+                yPos += 10;
+                addTable(productRelease.releases?.map(r => [r.role, r.name, '', r.date]) || [],
+                    ['Role', 'Name', 'Signature', 'Date']);
+                productRelease.releases?.forEach((r, idx) => {
+                    addSignature(`Signature ${idx + 1}:`, r.signature);
+                });
+
+                // Save PDF
+                doc.save('BatchManufacturingRecord.pdf');
+                console.log('PDF exported successfully.');
+                alert('PDF exported successfully!');
+            }
+
+            // Expose functions to global scope for button onclick
+            window.saveProductDetails = saveProductDetails;
+            window.saveRefDocuments = saveRefDocuments;
+            window.saveRawMaterials = saveRawMaterials;
+            window.saveEquipment = saveEquipment;
+            window.saveAreaClearance = saveAreaClearance;
+            window.saveProcedure = saveProcedure;
+            window.saveSampling = saveSampling;
+            window.saveBatchIssuance = saveBatchIssuance;
+            window.savePostProduction = savePostProduction;
+            window.saveProductRelease = saveProductRelease;
+            window.submitReport = submitReport;
+            window.exportToPDF = exportToPDF;
+            window.clearSignature = clearSignature;
+            window.addRefDocument = addRefDocument;
+            window.addRawMaterial = addRawMaterial;
+            window.addEquipment = addEquipment;
+            window.addAreaStep = addAreaStep;
+            window.addStep = addStep;
+        };
+    </script>
+</body>
+</html>
